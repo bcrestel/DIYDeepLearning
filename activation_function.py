@@ -51,3 +51,16 @@ class RELU(activation_function):
     
     def evaluate_firstderivative(self, x):
         return np.array(x>0, dtype=float)
+
+
+class sigmoid(activation_function):
+    """
+    Implements a sigmoid activation function
+    """
+    
+    def evaluate(self, x):
+        return 1./(1.0 + np.exp(-x))
+    
+    def evaluate_firstderivative(self, x):
+        return self.evaluate(x)*(1.0-self.evaluate(x))
+    
