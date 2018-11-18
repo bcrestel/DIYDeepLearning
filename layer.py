@@ -8,16 +8,17 @@ Created on Wed Nov 14 22:56:07 2018
 
 import numpy as np
 from enum import Enum
-from activation_function import RELU
+from activation_function import RELU, sigmoid
 #from scipy.linalg.blas import get_blas_funcs
 
 class layertype(Enum):
     """ 
-    Define the tyep of layer
+    Define the type of layer
     """
     INPUT = 0
     INSIDE = 1
     OUTPUT = -1
+
 
 class Layer():
     """ 
@@ -38,34 +39,57 @@ class Layer():
         self.f = activation_function
         self.layer_type = layer_type
         
+        if self.layer_type == layertype.INPUT:
+            assert(nb_neurons == nb_inputs)
+        
         #self.dgemv = get_blas_funcs('gemv')
+    
     
     def initialize_weights(self):
         self.parameters = np.random.randn(self.nb_neurons()*(self.nb_neurons_prev()+1))\
         .reshape(self.parameters.shape)
+    
+    def reset_grad(self):
+        self.grad_parameters = np.zeros(self.parameters.shape)
         
     def nb_neurons(self):
         return self.parameters.shape[0]
     
     def nb_neurons_prev(self):
         return self.parameters.shape[1] - 1
+    
+    def W(self):
+        return self.parameters[:,1:]
+    
+    def b(self):
+        return self.parameters[:,:1]
         
-    def compute_forward(self, a):
+    
+    def compute_z(self, a):
         x = np.concatenate((np.ones([1,1]), a), axis=0)
         return self.parameters.dot(x)
+        
+    def compute_forward(self, a):
+        if self.layer_type == layertype.INPUT:
+            return a
+        return self.f.evaluate(self.compute_z(a))
         #return dgemv(1.0, self.parameters, x) #slower on my machine
     
+    # Also slower
     #def compute_forward(self, a):
     #    b = self.parameters[:,:1]
     #    W = self.parameters[:,1:]
     #    return self.dgemv(1.0, W, a, 1.0, b)
     
-    #def backpropagate(self, d):
+    def compute_dadb(self, a):
+        return self.f.evaluate_firstderivative(self.compute_z(a))
+        
+    
 
 
 if __name__ == "__main__":
     # run unit tests
-    lay = Layer(200, 250, RELU(), layertype.INSIDE)
+    lay = Layer(200, 250, sigmoid(), layertype.INSIDE)
     lay.initialize_weights()
     x = np.random.randn(lay.nb_neurons_prev()).reshape((-1,1))
     y = lay.compute_forward(x)
